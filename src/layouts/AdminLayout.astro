@@ -1,0 +1,36 @@
+---
+import Sidebar from "../components/admin/Sidebar.astro";
+import "../styles/global.css";
+
+interface Props {
+  title?: string;
+}
+
+const { title = "Panel Administrativo" } = Astro.props;
+---
+
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>{title}</title>
+    <!--<== ste es el nombre que saldra en la ventan del navegador -->
+  </head>
+
+  <body class="bg-slate-300">
+    <!--bg-slate-300: <== este es el color de fondo de color griss-->
+    <div class="min-h-screen flex">
+      <Sidebar />
+
+      <main class="flex-1 min-w-0">
+        <!-- CONTENIDO -->
+        <section class="p-6">
+          <slot />
+        </section>
+      </main>
+    </div>
+  </body>
+</html>

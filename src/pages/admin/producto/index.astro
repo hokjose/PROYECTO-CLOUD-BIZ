@@ -1,0 +1,307 @@
+---
+// src/pages/admin/producto/index.astro
+import AdminLayout from "../../../layouts/AdminLayout.astro";
+import ModalAgregarProducto from "./ModalAgregarProducto.astro"; // <-- 1. IMPORTACIÓN DEL MODAL
+import { supabase } from "../../../lib/supabase";
+// 1. Cargamos los productos desde supabase
+const { data: productos, error } = await supabase
+  .from("productos")
+  .select("*, categorias(nombre)");
+
+if (error) {
+  console.error("Error al cargar productos:", error.message);
+}
+
+// 2. NUEVO: Cargamos las categorías de la base de datos
+const { data: categorias, error: errorCategorias } = await supabase
+  .from("categorias")
+  .select("id, nombre"); // Cambia 'nombre' por tu columna real si se llama diferente
+
+if (errorCategorias) {
+  console.error("Error al cargar categorías:", errorCategorias.message);
+}
+
+const totalProducts = productos ? productos.length : 0;
+
+---
+
+{/* 
+-rounded-none: Sin redondeado (esquinas completamente rectas, 0px).
+-rounded-sm: Redondeado muy sutil (2px).
+-rounded: El estándar por defecto (4px).
+-rounded-md: Redondeado mediano (6px).
+-rounded-lg: Redondeado grande (8px) (el de tu ejemplo).
+-rounded-xl: Muy grande (12px).
+-rounded-2xl: Extra grande (16px).
+-rounded-3xl: Súper grande (24px).
+-rounded-full: Máximo redondeado (9999px) Ideal para crear círculos perfectos o botones tipo píldora.*/}
+<AdminLayout title="Productos">
+  <!-- CABECERA -->
+  <div class="bg-white border border-black rounded-lg p-4">{/*el primero es para el fondo, el otro para color de borde, tamaño de esquinas, y espacio*/}
+    <div class="flex  justify-between"> {/* este es para poder poner los elementos en los extremos izquierdo y derecho */}
+      <div class="flex items-center gap-2">
+        <h2 class="text-base font-semibold text-slate-800">
+          Gestión de Productos
+        </h2>
+        <span
+          class="text-[10px] bg-pink-100 text-pink-600 px-2 py-1 rounded-full font-medium"
+        >
+          {totalProducts} productos
+        </span>
+      </div>
+
+      <!-- BOTÓN PARA EMITIR LA SEÑAL DEL MODAL -->
+      <button
+        type="button"
+        id="btn-abrir-modal"
+        class="bg-red-700 hover:bg-pink-700 text-white text-sm px-4 py-2 rounded cursor-pointer select-none transition-colors"
+      >
+        + Agregar producto
+      </button>
+    </div>
+
+    <!-- CUADRO DE BUSCAR POR NOMBRE O CODIGO -->
+    <div class="mt-4">
+  <input
+    id="input-buscar"
+    type="text"
+    placeholder="🔍 Buscar por nombre o código..."
+    class="w-full border border-slate-800 rounded px-3 py-2 text-xs outline-none focus:border-blue-700"
+  />
+</div>
+
+    <!-- CUADRO DE LAS CATEGORÍAS -->
+     {/* categorias.map(): Recorre la lista de la BD y crea un <option> con el ID y nombre de cada categoría */}
+
+     <div class="mt-5">
+    <select id="select-categoria" class="w-full border border-slate-200 rounded px-3 py-2 text-xs text-slate-500">
+  <option value="">Todas las categorías</option>
+  {categorias && categorias.map((cat) => (
+    <option value={cat.id}>{cat.nombre}</option>
+  ))}
+</select>
+
+  </div>
+  </div>
+  <!-- -------------------------------------------------------------------------------------------------------------- -->
+
+<!-- TABLA DE PRODUCTOS -->
+<div class="mt-4 bg-white border border-slate-200 rounded-lg overflow-x-auto">
+  <table class="w-full text-xs">
+    <!-- CABECERA DE TABLA -->
+    <thead class="bg-slate-50 border-b border-slate-200">
+      <tr>
+        <th class="text-left px-4 py-3 text-[10px] text-slate-500 font-medium">ID</th>
+        <th class="text-left px-4 py-3 text-[10px] text-slate-500 font-medium">IMAGEN</th>
+        <th class="text-left px-4 py-3 text-[10px] text-slate-500 font-medium">NOMBRE</th>
+        <th class="text-left px-4 py-3 text-[10px] text-slate-500 font-medium">DESCRIPCIÓN</th>
+        <th class="text-left px-4 py-3 text-[10px] text-slate-500 font-medium">CATEGORÍA</th>
+        <th class="text-left px-4 py-3 text-[10px] text-slate-500 font-medium">PRECIO</th>
+        <th class="text-left px-4 py-3 text-[10px] text-slate-500 font-medium">STOCK</th>
+        <th class="text-left px-4 py-3 text-[10px] text-slate-500 font-medium">ACCIONES</th>
+      </tr>
+    </thead>
+
+    <!-- CUERPO DE TABLA -->
+    <tbody>
+      {
+        productos && productos.length > 0 ? (
+          productos.map((prod) => (
+            <tr
+              class="fila-producto border-b border-slate-100 hover:bg-slate-50"
+              data-categoria={prod.categoria_id || prod.id_categoria || ""}
+              data-nombre={(prod.nombre || prod.title || "").toLowerCase()}
+              data-id={(prod.id || "").toString()}
+            >
+              <!-- ID -->
+              <td class="px-4 py-3 font-mono text-slate-500">
+                {prod.id}
+              </td>
+
+              <!-- IMAGEN -->
+              <td class="px-4 py-3">
+                {prod.image_url || prod.imgen_url ? (
+                  <img
+                    src={prod.image_url || prod.imgen_url}
+                    alt={prod.nombre}
+                    class="w-10 h-10 object-cover rounded border border-slate-200"
+                  />
+                ) : (
+                  <span class="text-slate-400 text-[10px]">
+                    Sin imagen
+                  </span>
+                )}
+              </td>
+
+              <!-- NOMBRE -->
+              <td class="px-4 py-3 font-medium text-slate-800">
+                {prod.nombre || prod.title}
+              </td>
+
+              <!-- DESCRIPCIÓN -->
+              <td class="px-4 py-3 text-slate-600 max-w-xs truncate">
+                {prod.descripcion || prod.description || "Sin descripción"}
+              </td>
+
+              <!-- CATEGORÍA -->
+              <td class="px-4 py-3 text-slate-600">
+                {prod.categorias?.nombre || "Sin categoría"}
+              </td>
+
+              <!-- PRECIO -->
+              <td class="px-4 py-3 text-slate-600 font-medium">
+                S/ {prod.precio || prod.price}
+              </td>
+
+              <!-- STOCK -->
+              <td class="px-4 py-3 text-slate-600">
+                {prod.stock ?? 0}
+              </td>
+
+              <!-- ACCIONES -->
+              <td class="px-4 py-3">
+                <div class="flex items-center gap-2">
+                  <button 
+                    type="button" 
+                    class="px-3 py-1.5 text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-md shadow-sm cursor-pointer transition-colors select-none"
+                  >
+                    Editar
+                  </button>
+                  <button 
+                    type="button" 
+                    class="px-3 py-1.5 text-xs font-semibold text-red-700 bg-red-50 hover:bg-red-100 border border-red-200 rounded-md shadow-sm cursor-pointer transition-colors select-none"
+                  >
+                    Eliminar
+                  </button>
+                </div>
+              </td>
+            </tr>
+          ))
+        ) : null
+      }
+
+  <!-- 📍 EL ÚNICO Y EXCLUSIVO MENSAJE EN TODA LA TABLA -->
+  <tr id="sinResultadosLupa" class={productos && productos.length > 0 ? "hidden" : ""}>
+    <td colspan="8" class="text-center py-10 text-blue-500 font-semibold text-lg">
+       lo siento, 😭No hay o no existe este producto en tu base de datos.
+    </td>
+  </tr>
+</tbody>
+    </table>
+  </div>
+   <!-- -------------------------------------------------------------------------------------------------------------- -->
+
+  <!-- 2. INCLUSIÓN DE LA VENTANA MODAL (OBLIGATORIO PARA QUE EXISTA EN EL HTML) -->
+  <ModalAgregarProducto />
+</AdminLayout>
+ <!-- -------------------------------------------------------------------------------------------------------------- -->
+<!-- 3. SCRIPT CLIENTE PARA ACTIVAR EL MODAL -->
+<script>
+  {/* Al dar clic en el botón con ID 'btn-abrir-modal', avisa globalmente a la
+   página (evento 'abrir-modal-producto') para que se abra una ventana flotante de producto. */}
+
+  document.addEventListener("DOMContentLoaded", () => {
+    const btn = document.getElementById("btn-abrir-modal");
+    btn?.addEventListener("click", () => {
+      window.dispatchEvent(new CustomEvent("abrir-modal-producto"));
+    });
+  });
+ //--------------------------------------------------------------------------------------------------------------------------------
+ /* Esta función es para poder listar y mostrar los productos de las categorías 
+     y también del buscador de la lupa */
+  document.addEventListener("DOMContentLoaded", () => {
+    const select = document.getElementById("select-categoria") as HTMLSelectElement | null;
+    const input = document.getElementById("input-buscar") as HTMLInputElement | null;
+    const filas = document.querySelectorAll(".fila-producto");
+    const filaMensajeLupa = document.getElementById("sinResultadosLupa") as HTMLElement | null;
+
+    function filtrarTabla() {
+      const catValor = select?.value || "";
+      const buscarValor = (input?.value || "").toLowerCase().trim();
+      let contadorVisibles = 0;
+
+      filas.forEach((f) => {
+        const fila = f as HTMLElement;
+        
+        // Obtenemos los datos guardados en el tr
+        const catFila = fila.dataset.categoria || "";
+        const nombreFila = fila.dataset.nombre || "";
+        const idFila = fila.dataset.id || "";
+
+        // Validaciones
+        const coincideCat = catValor === "" || catFila === catValor;
+        const coincideBuscar = buscarValor === "" || nombreFila.includes(buscarValor) || idFila.includes(buscarValor);
+
+        // Si cumple ambas condiciones, se muestra la fila
+        if (coincideCat && coincideBuscar) {
+          fila.style.display = "";
+          contadorVisibles++;
+        } else {
+          fila.style.display = "none";
+        }
+      });
+
+      // Si no se encuentra ninguna coincidencia y existen filas cargadas, se muestra el mensaje
+      if (filaMensajeLupa) {
+        if (contadorVisibles === 0 && filas.length > 0) {
+          filaMensajeLupa.classList.remove("hidden");
+        } else {
+          filaMensajeLupa.classList.add("hidden");
+        }
+      }
+    }
+
+    // Escuchar cuando el usuario escribe o cambia el select
+    select?.addEventListener("change", filtrarTabla);
+    input?.addEventListener("input", filtrarTabla);
+  });
+  //para que se pueda mostrar el nuevo productos ingresado con su imagen y todos los campos 
+  document.addEventListener("DOMContentLoaded", () => {
+    // 1. Emitir evento global al pulsar el botón "+ Agregar producto"
+    const btnAbrirModal = document.getElementById("btn-abrir-modal");
+    btnAbrirModal?.addEventListener("click", () => {
+      window.dispatchEvent(new CustomEvent("abrir-modal-producto"));
+    });
+
+    // 2. Control de los Filtros (Lupa de Búsqueda y Selector de Categoría)
+    const select = document.getElementById("select-categoria") as HTMLSelectElement | null;
+    const input = document.getElementById("input-buscar") as HTMLInputElement | null;
+    const filas = document.querySelectorAll(".fila-producto");
+    const filaMensajeLupa = document.getElementById("sinResultadosLupa") as HTMLElement | null;
+
+    function filtrarTabla() {
+      const catValor = select?.value || "";
+      const buscarValor = (input?.value || "").toLowerCase().trim();
+      let contadorVisibles = 0;
+
+      filas.forEach((f) => {
+        const fila = f as HTMLElement;
+        const catFila = fila.dataset.categoria || "";
+        const nombreFila = fila.dataset.nombre || "";
+        const idFila = fila.dataset.id || "";
+
+        const coincideCat = catValor === "" || catFila === catValor;
+        const coincideBuscar = buscarValor === "" || nombreFila.includes(buscarValor) || idFila.includes(buscarValor);
+
+        if (coincideCat && coincideBuscar) {
+          fila.style.display = "";
+          contadorVisibles++;
+        } else {
+          fila.style.display = "none";
+        }
+      });
+
+      // Mostrar u ocultar el mensaje si la tabla queda sin filas visibles
+      if (filaMensajeLupa) {
+        if (contadorVisibles === 0 && filas.length > 0) {
+          filaMensajeLupa.classList.remove("hidden");
+        } else if (filas.length > 0) {
+          filaMensajeLupa.classList.add("hidden");
+        }
+      }
+    }
+
+    select?.addEventListener("change", filtrarTabla);
+    input?.addEventListener("input", filtrarTabla);
+  });
+</script>

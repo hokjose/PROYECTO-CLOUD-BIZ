@@ -1,0 +1,68 @@
+---
+import AdminLayout from "../../../layouts/AdminLayout.astro";
+import { supabase } from "../../../lib/supabase";
+
+// 1. Consultamos las categorías de la base de datos de Supabase
+const { data: categories, error } = await supabase
+  .from('categorias')
+  .select('*');
+
+if (error) {
+  console.error("Error al cargar categorías:", error.message);
+}
+---
+<!--importante instalar supabase con esto _xd: npm install @supabase/supabase-js -->
+<AdminLayout title="Categorias">
+  <div class="bg-white border border-slate-200 rounded-lg p-4">
+    <div class="flex items-center justify-between">
+      <div>
+        <h2 class="text-base font-semibold text-slate-800">
+          Gestión de Categorías
+        </h2>
+
+        
+      </div>
+
+      <button
+        class="bg-pink-600 hover:bg-pink-700 text-white text-xs px-4 py-2 rounded"
+      >
+        + Agregar categoría
+      </button>
+    </div>
+  </div>
+
+  <div class="mt-4 bg-white border border-slate-200 rounded-lg overflow-hidden">
+    <table class="w-full text-xs">
+      <thead class="bg-slate-50 border-b">
+        <tr>
+          <th class="text-left px-4 py-3"> ID </th>
+          <th class="text-left px-4 py-3"> NOMBRE </th> 
+          <th class="text-left px-4 py-3"> FECHA </th>
+          <th class="text-left px-4 py-3"> ACCIONES </th>
+        </tr>
+      </thead>
+
+      <tbody>
+        {categories && categories.length > 0 ? (
+          categories.map((cat) => (
+            <tr class="border-b hover:bg-slate-50">
+              <td class="px-4 py-3 font-mono text-slate-500">{cat.id}</td>
+              <td class="px-4 py-3 font-medium text-slate-800">{cat.name || cat.nombre}</td>
+              <td class="px-4 py-3 text-slate-400">{new Date(cat.created_at).toLocaleDateString()}</td>
+              <td class="px-4 py-3 text-slate-600">
+                <!-- Espacio para acciones futuras como editar/eliminar -->
+                <span class="cursor-pointer hover:text-pink-600">Editar</span>
+              </td>
+            </tr>
+          ))
+        ) : (
+          <tr>
+            <td colspan="5" class="text-center py-12 text-slate-400">
+              Aun No hay categorías registradas.
+            </td>
+          </tr>
+        )}
+      </tbody>
+    </table>
+  </div>
+</AdminLayout>
